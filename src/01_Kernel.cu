@@ -1,7 +1,7 @@
 #include "kernels.cuh"
 
 // Naive Global Memory Kernel (The Unoptimized Baseline)
-__global__ void GMKernel(const float* A, const float* B, float* C, int N) 
+__global__ void Kernel_01(const float* A, const float* B, float* C, int N) 
 {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
