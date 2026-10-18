@@ -1,0 +1,69 @@
+Microarchitecture & Foundry: Blackwell (GB205-300-A1 die), fabricated on TSMC's custom 4N FinFET process, packing 31.1 billion transistors into a 263 mm² die size.
+
+Core Compute Units:
+
+    Streaming Multiprocessors (SMs): 48 active SMs.
+
+    FP32 CUDA Cores: 6,144.
+
+    Tensor Cores: 192 units (5th Generation, featuring native support for low-precision FP4, FP8, and accelerated block-scaled transformer execution).
+
+    RT Cores: 48 units (4th Generation).
+
+Clock Speeds:
+
+    Base Clock: 2,325 MHz.
+
+    Boost Clock: 2,512 MHz.
+
+Memory Subsystem:
+
+    Capacity & Type: 12 GB of GDDR7 memory.
+
+    Memory Bus Width: 192-bit.
+
+    Memory Clock: 1,750 MHz (28 Gbps effective data rate).
+
+    Peak Memory Bandwidth: 672.0 GB/s.
+
+Cache Hierarchy:
+
+    L1 Cache / Shared Memory: Configurable up to 128 KB per SM.
+
+    L2 Cache: A massive, unified 48 MB L2 cache.
+
+Theoretical Performance:
+
+    Single-Precision (FP32) / FP16: ~30.87 TFLOPS.
+
+    AI Compute: ~988 AI TOPS.
+
+Bus & Power Interface:
+
+    Host Interface: PCI-Express 5.0 x16.
+
+    Total Graphics Power (TGP): 250W.
+
+    Power Delivery: 1x 16-pin connector (Recommended system PSU: 600W).
+
+    Display Outputs: 1x HDMI 2.1b, 3x DisplayPort 2.1b (supporting up to 4K at 480Hz or 8K at 165Hz via DSC).
+
+==========
+
+-> Strengths:
+
+GDDR7 High-Frequency Bandwidth: The shift to GDDR7 at 28 Gbps over a 192-bit bus pushes bandwidth to 672 GB/s, giving a much higher ceiling before hitting the memory bandwidth wall compared to previous-generation mid-range cards.
+
+The Tensor Memory Accelerator (TMA): TMA hardware engine handles asynchronous block-to-shared-memory copies entirely in hardware. This frees up register files and enables the writing of high-performance custom attention kernels (like FlashAttention) with minimal overhead.
+
+5th-Gen Tensor Cores & Sub-Byte Precision: Native support for FP4 and FP8 means custom CUDA kernels can experiment with state-of-the-art quantized matrix multiplications, which are critical for high-throughput inference engines.
+
+Generous 48 MB L2 Cache: A disproportionately large L2 cache for a mid-tier die means localized tensor tiles can achieve exceptional cache hit rates, significantly softening the penalty of non-cooperative memory access patterns.
+
+
+
+-> Weaknesses:
+
+12 GB VRAM Hard Ceiling: For heavy deep learning workflows, 12 GB fills up rapidly. You cannot load full-scale frontier large language models locally for fine-tuning without heavy quantization or offloading, keeping your focus strictly on efficient micro-kernels, smaller layers, and compilation pipelines.
+
+192-Bit Bus Width Constraints: While GDDR7 clock speeds compensate for width, a 192-bit bus means that if custom kernels suffer from uncoalesced global memory loads or bank conflicts in shared memory, performance will tank sharply because the bus saturates quickly.
