@@ -1,0 +1,41 @@
+# Build Directories (CMake)
+build/
+bin/
+out/
+
+# Visual Studio / MSVC Caches
+.vs/
+*.suo
+*.user
+*.aps
+*.nc
+*.sdf
+*.opensdf
+*.cache
+
+# Compiled Binaries & Objects
+*.obj
+*.exe
+*.lib
+*.exp
+*.dll
+*.pdb
+*.ilk
+*.tlog
+*.idb
+
+# CUDA / NVCC Temporary Files
+*.cubin
+*.ptx
+*.fatbin
+*.nvcc-depend
+
+# VS Code Local Workspace Files
+.vscode/ipch/
+.vscode/.browse.c_cpp.db*
+.vscode/settings.json
+
+# Operating System Files
+Thumbs.db
+Desktop.ini
+.DS_Store
