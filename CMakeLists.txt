@@ -12,7 +12,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 # Source files (updated to .cu so nvcc compiles both)
 set(SOURCES
     src/01_naive.cu
-    benchmarks/benchmark_main.cu
+    benchmarks/benchmark_matrix_multiplication.cu
 )
 
 add_executable(tensor_bench ${SOURCES})

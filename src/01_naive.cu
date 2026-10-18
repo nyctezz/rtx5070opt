@@ -1,15 +1,19 @@
 #include "kernels.cuh"
 
-// Naive CUDA Kernel (The Unoptimized Baseline)
-__global__ void matrixMulNaive(const float* A, const float* B, float* C, int N) {
+// Naive Global Memory Kernel (The Unoptimized Baseline)
+__global__ void GMKernel(const float* A, const float* B, float* C, int N) 
+{
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (row < N && col < N) {
+    if (row < N && col < N) 
+    {
         float sum = 0.0f;
-        for (int k = 0; k < N; ++k) {
+        for (int k = 0; k < N; ++k) 
+        {
             sum += A[row * N + k] * B[k * N + col];
         }
+
         C[row * N + col] = sum;
     }
 }
