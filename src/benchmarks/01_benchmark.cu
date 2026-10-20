@@ -1,8 +1,11 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+
 #include <cuda_runtime.h>
+
 #include "kernels.cuh"
+
 
 // Error reporter macro
 inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true) 
@@ -18,10 +21,18 @@ inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort =
 
 #define CHECK_CUDA(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 
+/*
+    01_benchmark - matrix multiplication benchmark:
 
+this benchmark evaluates performance of a given kernel for matrix multiplication task
+
+*/
 
 int main() 
 {
+    
+
+
     int N = 2048;
     size_t bytes = N * N * sizeof(float);
 

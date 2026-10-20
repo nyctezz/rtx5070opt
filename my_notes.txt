@@ -1,0 +1,10 @@
+1. create a nice way to visualize everything:
+pic of naked gpu form the top with everything labeled > theoretical schematic of GB205 > theoretical schematic of a single schematic
+
+get theoretical pics from here:
+
+https://www.techpowerup.com/gpu-specs/nvidia-gb205.g1074
+
+
+
+nvcc -O3 -ccbin "C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64" measurements/sweep_kernel_01.cu src/01_Kernel.cu -Iinclude -o benchmark_kernel_01
