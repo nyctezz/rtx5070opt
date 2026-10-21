@@ -1,7 +1,7 @@
 #include "kernels.cuh"
 
 // Shared Memory Tiling Kernel
-__global__ void Kernel_02(const float* A, const float* B, float* C, int N) 
+__global__ void kernel_02(const float* A, const float* B, float* C, int N) 
 {
     //tile dimension (square)
     const int BLOCK_SIZE = 16;

@@ -1,13 +1,15 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <stdexcept>
 
-#include <cuda_runtime.h>
-
+#include "benchmarks.cuh"
 #include "kernels.cuh"
 
 
-// Error reporter macro
+// error reporter macro
 inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true) 
 {
     if (code != cudaSuccess) 
@@ -21,133 +23,88 @@ inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort =
 
 #define CHECK_CUDA(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 
-/*
+/* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
     01_benchmark - matrix multiplication benchmark:
 
 this benchmark evaluates performance of a given kernel for matrix multiplication task
 
-*/
+   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
-int main() 
+benchmark_01::benchmark_01(int matrices_size)
 {
-    
+    n = matrices_size;
+    bytes = n * n *  sizeof(float);
+}
 
+void benchmark_01::init_matrices_with_ones()
+{
+    h_A.assign(static_cast<size_t>(n) * n, 1.0f);
+    h_B.assign(static_cast<size_t>(n) * n, 1.0f);
+    h_C.assign(static_cast<size_t>(n) * n, 0.0f);
 
-    int N = 2048;
-    size_t bytes = N * N * sizeof(float);
-
-    std::cout << "Initializing matrices of size " << N << "x" << N << "...\n";
-    std::vector<float> h_A(N * N, 1.0f);
-    std::vector<float> h_B(N * N, 1.0f);
-    std::vector<float> h_C(N * N, 0.0f);
-
-    float *d_A, *d_B, *d_C;
     CHECK_CUDA(cudaMalloc(&d_A, bytes));
     CHECK_CUDA(cudaMalloc(&d_B, bytes));
     CHECK_CUDA(cudaMalloc(&d_C, bytes));
 
     CHECK_CUDA(cudaMemcpy(d_A, h_A.data(), bytes, cudaMemcpyHostToDevice));
     CHECK_CUDA(cudaMemcpy(d_B, h_B.data(), bytes, cudaMemcpyHostToDevice));
+}
 
-    // double-precision floating-point operations count for matrix multiplication: 2 * N^3
-    double ops = 2.0 * static_cast<double>(N) * N * N;
-    int iterations = 5;
+benchmark_result benchmark_01::run(_kernel_func kernel, dim3 block_size) {
+    dim3 gridSize((n + block_size.x - 1) / block_size.x, (n + block_size.y - 1) / block_size.y);
 
-    // reusable benchmarking & verification helper lambda
-    auto run_and_verify_kernel = [&](const std::string& kernel_name, dim3 blockSize, dim3 gridSize, auto kernel_invoker) 
-    {
-        std::cout << "\n----------------------------------------\n";
-        std::cout << "Running: " << kernel_name << "\n";
-        std::cout << "Block Size: (" << blockSize.x << ", " << blockSize.y << ") | ";
-        std::cout << "Grid Size: (" << gridSize.x << ", " << gridSize.y << ")\n";
+    // Pack kernel arguments into an array of pointers
+    void* args[] = { &d_A, &d_B, &d_C, &n };
 
-        // Reset output matrix on device
-        CHECK_CUDA(cudaMemset(d_C, 0, bytes));
+    // Warm-up launch using cudaLaunchKernel
+    CHECK_CUDA(cudaLaunchKernel((const void*)kernel, gridSize, block_size, args, 0, 0));
+    CHECK_CUDA(cudaGetLastError());
+    CHECK_CUDA(cudaDeviceSynchronize());
 
-        // Warm-up run
-        kernel_invoker(gridSize, blockSize);
-        CHECK_CUDA(cudaDeviceSynchronize());
+    cudaEvent_t start, stop;
+    CHECK_CUDA(cudaEventCreate(&start));
+    CHECK_CUDA(cudaEventCreate(&stop));
 
-        // Create CUDA events for precise GPU timing
-        cudaEvent_t start, stop;
-        CHECK_CUDA(cudaEventCreate(&start));
-        CHECK_CUDA(cudaEventCreate(&stop));
+    constexpr int iterations = 5;
+    CHECK_CUDA(cudaEventRecord(start));
 
-        CHECK_CUDA(cudaEventRecord(start));
-        for (int i = 0; i < iterations; ++i) 
-        {
-            kernel_invoker(gridSize, blockSize);
-        }
-        CHECK_CUDA(cudaEventRecord(stop));
-        CHECK_CUDA(cudaEventSynchronize(stop));
-
-        float milliseconds = 0;
-        CHECK_CUDA(cudaEventElapsedTime(&milliseconds, start, stop));
-        float avg_ms = milliseconds / iterations;
-        double gflops = (ops / (avg_ms / 1000.0)) / 1e9;
-
-        std::cout << kernel_name << " Time: " << avg_ms << " ms\n";
-        std::cout << kernel_name << " Performance: " << gflops << " GFLOPS\n";
-
-        // --- Result Verification ---
-        CHECK_CUDA(cudaMemcpy(h_C.data(), d_C, bytes, cudaMemcpyDeviceToHost));
-        cudaEventDestroy(start);
-        cudaEventDestroy(stop);
-
-        bool success = true;
-        float expected = static_cast<float>(N);
-        for (int i = 0; i < N * N; ++i) 
-        {
-            if (std::abs(h_C[i] - expected) > 1e-2f) 
-            {
-                std::cerr << "[ERROR]: Verification FAILED at index " << i 
-                          << " (Row: " << i / N << ", Col: " << i % N << "): "
-                          << "Expected " << expected << ", Got " << h_C[i] << "\n";
-                success = false;
-                break;
-            }
-        }
-
-        if (success) 
-        {
-            std::cout << "Verification PASSED. All elements equal " << expected << ".\n";
-        }
-    };
-
-
-
-    // ========
-    // KERNELS:
-    // ========
-
-    // 01 Global Memory Kernel:
-    {
-        dim3 blockSize(16, 16);
-        dim3 gridSize((N + blockSize.x - 1) / blockSize.x, (N + blockSize.y - 1) / blockSize.y);
-        
-        run_and_verify_kernel("Kernel_01 - Global Memory", blockSize, gridSize, [&](dim3 grid, dim3 block) 
-        {
-            Kernel_01<<<grid, block>>>(d_A, d_B, d_C, N);
-        });
-    }
-    
-    // 02 Shared Memory Tiling Kernel:
-    {
-        dim3 blockSize(16, 16);
-        dim3 gridSize((N + 16 - 1) / 16, (N + 16 - 1) / 16);
-        
-        run_and_verify_kernel("Kernel_02 - Shared Memory Tiling", blockSize, gridSize, [&](dim3 grid, dim3 block) 
-        {
-            Kernel_02<<<grid, block>>>(d_A, d_B, d_C, N);
-        });
+    for (int i = 0; i < iterations; ++i) {
+        CHECK_CUDA(cudaLaunchKernel((const void*)kernel, gridSize, block_size, args, 0, 0));
     }
 
-    std::cout << "----------------------------------------\n";
+    CHECK_CUDA(cudaGetLastError());
+    CHECK_CUDA(cudaEventRecord(stop));
+    CHECK_CUDA(cudaEventSynchronize(stop));
 
-    // Clean up global allocations
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
+    float total_ms = 0.0f;
+    CHECK_CUDA(cudaEventElapsedTime(&total_ms, start, stop));
+    float avg_ms = total_ms / iterations;
 
-    return 0;
+    double ops = 2.0 * n * n * n;
+    double gflops = ops / (avg_ms * 1e6);
+
+    CHECK_CUDA(cudaMemcpy(h_C.data(), d_C, bytes, cudaMemcpyDeviceToHost));
+
+    float expected = static_cast<float>(n);
+    for (size_t i = 0; i < h_C.size(); ++i) {
+        if (std::abs(h_C[i] - expected) > 1e-2f) {
+            std::cerr << "Verification FAILED at index " << i << '\n';
+            CHECK_CUDA(cudaEventDestroy(start));
+            CHECK_CUDA(cudaEventDestroy(stop));
+            throw std::runtime_error("Kernel verification failed");
+        }
+    }
+
+    CHECK_CUDA(cudaEventDestroy(start));
+    CHECK_CUDA(cudaEventDestroy(stop));
+
+    return {avg_ms, gflops};
+}
+
+benchmark_01::~benchmark_01()
+{
+    if (d_A != nullptr) CHECK_CUDA(cudaFree(d_A));
+    if (d_B != nullptr) CHECK_CUDA(cudaFree(d_B));
+    if (d_C != nullptr) CHECK_CUDA(cudaFree(d_C));
 }

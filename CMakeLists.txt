@@ -11,8 +11,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Source files (updated to .cu so nvcc compiles both)
 set(SOURCES
-    src/kernels/01_Kernel.cu
-    src/kernels/02_Kernel.cu
+    src/main.cu
+    src/kernels/01_kernel.cu
+    src/kernels/02_kernel.cu
     src/benchmarks/01_benchmark.cu
 )
 
