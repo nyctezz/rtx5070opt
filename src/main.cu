@@ -30,6 +30,7 @@ void run_b01_k01()
 
     std::cout << kernel_name << " time: " << result.avg_ms << " ms\n";
     std::cout << kernel_name << " performance: " << result.gflops << " GFLOPS\n";
+    std::cout << kernel_name << " calculating bytes speed: " << result.achieved_compute_gb_s << " GB/s\n";
     std::cout << "=-----------------------=\n\n";
 }
 
@@ -54,6 +55,7 @@ void run_b01_k02()
 
     std::cout << kernel_name << " time: " << result.avg_ms << " ms\n";
     std::cout << kernel_name << " performance: " << result.gflops << " GFLOPS\n";
+    std::cout << kernel_name << " calculating bytes speed: " << result.achieved_compute_gb_s << " GB/s\n";
     std::cout << "=-----------------------=\n\n";
 }
 

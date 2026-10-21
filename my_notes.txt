@@ -6,5 +6,8 @@ get theoretical pics from here:
 https://www.techpowerup.com/gpu-specs/nvidia-gb205.g1074
 
 
-
+> use this if compiling different file with main()
 nvcc -O3 -ccbin "C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64" measurements/sweep_kernel_01.cu src/01_Kernel.cu -Iinclude -o benchmark_kernel_01
+
+> use this to find out ultra details about performance and bottlenecks (run it through Nsight Compute CLI)
+ncu --set full -f -o profile_output ./your_benchmark_executable

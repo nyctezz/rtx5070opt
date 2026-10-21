@@ -12,6 +12,7 @@ struct benchmark_result
 {
     float avg_ms;
     double gflops;
+    double achieved_compute_gb_s;
 };
 
 class benchmark_01 

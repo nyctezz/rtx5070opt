@@ -84,6 +84,9 @@ benchmark_result benchmark_01::run(_kernel_func kernel, dim3 block_size) {
     double ops = 2.0 * n * n * n;
     double gflops = ops / (avg_ms * 1e6);
 
+    double total_bytes = (2.0 * static_cast<double>(n) * n * n + static_cast<double>(n) * n) * sizeof(float);
+    double compute_gb_s = (total_bytes / (avg_ms * 1e-3)) / 1e9;
+
     CHECK_CUDA(cudaMemcpy(h_C.data(), d_C, bytes, cudaMemcpyDeviceToHost));
 
     float expected = static_cast<float>(n);
@@ -99,7 +102,7 @@ benchmark_result benchmark_01::run(_kernel_func kernel, dim3 block_size) {
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));
 
-    return {avg_ms, gflops};
+    return {avg_ms, gflops, compute_gb_s};
 }
 
 benchmark_01::~benchmark_01()
